@@ -1,0 +1,50 @@
+# OpenAPI spec for the /invites/decline path
+# Corresponds to the api_invites CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+post:
+  tags:
+    - invites
+  summary: Decline Invite
+  description: Decline an invite to join an organization.
+  operationId: DeclineInvite
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            invite_guid:
+              type: string
+              description: GUID of the invite request.
+          required: ["invite_guid"]
+  responses:
+    $ref: "../responses.yml"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-invites-DeclineHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - invites
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: DeclineInvitePreflight
+  responses:
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-invites-DeclineHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+

@@ -1,0 +1,151 @@
+# OpenAPI spec for the /pats/{token_guid} path.
+# Corresponds to the api_pats CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+get:
+  tags:
+    - pats
+  summary: Get Personal Access Token Details
+  description: Get the details for a specific personal access token.
+  operationId: GetPersonalAccessToken
+  parameters:
+    - name: token_guid
+      in: path
+      description: GUID of the personal access token object. If you create
+        a new token, the GUID is returned in the response body.  Otherwise,
+        you can look up the GUID with GetPersonalAccessTokens.
+      required: true
+      schema:
+        type: string
+    - name: user_guid
+      in: query
+      description: GUID of the user account.  If omitted, the API will use
+        the GUID associated with your user.
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Call was successful.  Search results will be in the
+        response body.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              personal_access_token:
+                type: object
+                properties:
+                  token_prefix:
+                    type: string
+                    description: First five characters of the token.
+                  issued:
+                    type: string
+                    format: date-time
+                    description: Date and time the token was issued, in
+                      ISO 8601 format as specified by
+                      [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+                  expires:
+                    type: string
+                    format: date-time
+                    description: Date and time the token will expire, in
+                      ISO 8601 format as specified by
+                      [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+                  comment:
+                    type: string
+                    description: User comment that was provided when the token
+                      was created.
+                  last_used:
+                    type: string
+                    format: date-time
+                    description: Date and time the token was last used, specified in
+                      ISO 8601 format as specified by
+                      [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-pats-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+delete:
+  tags:
+    - pats
+  summary: Revoke a Personal Access Token
+  description: Revoke a personal access token with the attributes specified.
+  operationId: RevokePersonalAccessToken
+  parameters:
+    - name: token_guid
+      in: path
+      description: GUID of the personal access token object.  If you create
+        a new token, the GUID is returned in the response body.  Otherwise,
+        you can look up the GUID with GetPersonalAccessTokens.
+      required: true
+      schema:
+        type: string
+    - name: user_guid
+      in: query
+      description: GUID of the user account.  If omitted, the API will use
+        the GUID associated with your user.
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Request was successful, object deleted.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Status message (informational only).
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      description: Could not find token/token does not exist.
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-pats-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - pats
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: PersonalAccessTokenPreflight
+  parameters:
+    - name: token_guid
+      in: path
+      description: GUID of the personal access token object.  If you create a new
+        token, the GUID is returned in the response body.  Otherwise,
+        you can look up the GUID with GetPersonalAccessTokens.
+      required: true
+      schema:
+        type: string
+  responses:
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-pats-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything

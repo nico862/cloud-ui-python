@@ -1,0 +1,167 @@
+# OpenAPI definitions for common components.
+# Anything that gets reused a lot should be put in this file to
+# follow DRY and so that definitions are consistent across endpoints
+components:
+  parameters:
+    paginationSizeParam:
+      name: pagination_size
+      in: query
+      description: The pagination size for the request.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 60
+        default: 50
+    paginationTokenParam:
+      name: pagination_token
+      in: query
+      description: Search results are paginated, up to 1MB of data or the client-defined
+        amount, whichever is lower.  If one of those limits is exceeded, the response
+        will include a token to retrieve the next page.  If you have a pagination token
+        from a previous request, pass it in here (all other parameters the same) to get the
+        next page.  It may be necessary to repeat the call several times to obtain the full
+        set of search results.
+      schema:
+        type: string
+    eventTypesParam:
+      name: event_types
+      in: query
+      description: Type of events to search for. If omitted, all event types
+        are returned.
+      schema:
+        type: array
+        items:
+          type: string
+    startTimeParam:
+      name: start_time
+      in: query
+      description: Date and time of the earliest events to return
+        in ISO 8601 format as specified by
+        [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+      schema:
+        type: string
+        format: date-time
+    startTimeParamRequired:
+      name: start_time
+      in: query
+      required: true
+      description: Date and time of the earliest events to return
+        in ISO 8601 format as specified by
+        [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+      schema:
+        type: string
+        format: date-time
+    endTimeParam:
+      name: end_time
+      in: query
+      description: Date and time of the latest events to return
+        in ISO 8601 format as specified by
+        [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+      schema:
+        type: string
+        format: date-time
+  schemas:
+    EventsResponse:
+      type: object
+      properties:
+        event_guid:
+          type: string
+          description: GUID of the event.
+        device_guid:
+          type: string
+          description: GUID of the device corresponding to this event.
+        timestamp:
+          type: string
+          format: date-time
+          description: The date and time the event occurred,
+            in ISO 8601 format as specified by
+            [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+        event_type:
+          type: string
+          description: Type of event that occurred
+        event_data:
+          type: object
+          description: The data from the event. Varies based on event_type.
+    MetricsItems:
+      type: object
+      minItems: 1
+      properties:
+        namespace:
+          type: string
+          description: The namespace of the metric. Possible values can
+            be obtained from a GET on this endpoint.
+          pattern: '[^:].*'
+          minLength: 1
+          maxLength: 255
+        metric_name:
+          type: string
+          description: The name of the metric. Possible values can
+            be obtained from a GET on this endpoint.
+          minLength: 1
+          maxLength: 255
+        period:
+          type: integer
+          minimum: 1
+          description: The granularity, in seconds, of the returned data.
+            <br>
+            Must be specified as follows, or no data will be returned&#58;
+            <table>
+              <tr>
+                <th>start_time</th>
+                <th>Allowed Values</th>
+              </tr>
+              <tr>
+                <td>Less than 3 hours ago (high-resolution metrics)</td>
+                <td>1, 5, 10, 30, or any multiple of 60 seconds</td>
+              </tr>
+              <tr>
+                <td>Less than 3 hours ago (regular-resolution metrics)</td>
+                <td>Multiples of 60 seconds</td>
+              </tr>
+              <tr>
+                <td>Between 3 hours and 15 days ago</td>
+                <td>Multiples of 60 seconds</td>
+              </tr>
+              <tr>
+                <td>Between 15 and 63 days ago</td>
+                <td>Multiples of 300 seconds (5 minutes)</td>
+              </tr>
+              <tr>
+                <td>Greater than 63 days ago</td>
+                <td>Multiples of 3600 seconds (1 hour)</td>
+              </tr>
+            </table>
+        statistic:
+          type: string
+          description: The statistic to return. Can be any
+            [CloudWatch statistic](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Statistics-definitions.html)
+            or extended statistics.
+          example: Sum
+      required: ["namespace", "metric_name", "period", "statistic"]
+    MetricsResponse:
+      type: object
+      properties:
+        metrics:
+          type: array
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+                description: Label associated with the metrics.
+              timestamps:
+                type: array
+                description: Timestamps for the data points, formatted
+                  as a Unix timestamp. The timestamp for values[x]
+                  = timestamp[x].
+              values:
+                type: array
+                description: The data points for the metric, corresponding
+                  to the returned timestamps. The value for timestamps[x]
+                  = values[x].
+        pagination_token:
+          type: string
+          nullable: true
+          description: Pagination token.  If additional search results
+            are available, this property will contain a token to
+            retrieve the next page.

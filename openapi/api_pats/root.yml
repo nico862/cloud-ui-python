@@ -1,0 +1,243 @@
+# OpenAPI spec for the /pats path.
+# Corresponds to the api_pats CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+get:
+  tags:
+    - pats
+  summary: Get Personal Access Tokens
+  description: Get the personal access tokens for a specific user.
+  operationId: GetPersonalAccessTokens
+  parameters:
+    - name: user_guid
+      in: query
+      description: GUID of the user account.  If omitted, the API will use
+        the GUID associated with your user.
+      schema:
+        type: string
+    - $ref: "../common.yml#/components/parameters/paginationSizeParam"
+    - $ref: "../common.yml#/components/parameters/paginationTokenParam"
+  responses:
+    '200':
+      description: Call was successful.  Search results will be in the
+        response body, along with an optional pagination token if there are
+        more results waiting.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              personal_access_tokens:
+                type: array
+                description: Array of found personal access tokens.  Will be empty if no
+                  matches are found.  Results are paginated, use pagination_token to see
+                  if additional pages of results are available.
+                items:
+                  type: object
+                  properties:
+                    token_guid:
+                      type: string
+                      format: uuid
+                      description: GUID of the token.
+                    token_prefix:
+                      type: string
+                      description: First five characters of the token.
+                    issued:
+                      type: string
+                      format: date-time
+                      description: Date and time the token was issued, in
+                        ISO 8601 format as specified by
+                        [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+                    expires:
+                      type: string
+                      format: date-time
+                      description: Date and time the token will expire, in
+                        ISO 8601 format as specified by
+                        [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+                    comment:
+                      type: string
+                      description: User comment that was provided when the token
+                        was created.
+                    last_used:
+                      type: string
+                      format: date-time
+                      description: Date and time the token was last used, in
+                        ISO 8601 format as specified by
+                        [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+              pagination_token:
+                type: string
+                nullable: true
+                description: Pagination token.  If additional search results
+                  are available, this property will contain a token to
+                  retrieve the next page.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-pats-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+post:
+  tags:
+    - pats
+  summary: Create a Personal Access Token
+  description: Create a personal access token with the attributes specified.
+  operationId: CreatePersonalAccessToken
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            token_lifespan_days:
+              type: integer
+              description: Number of days the token will be valid.
+              minimum: 1
+              maximum: 365
+            comment:
+              type: string
+              description: A comment that will be associated with the
+                personal access token.
+              example: Access token for computer A
+          required: ["token_lifespan_days"]
+  responses:
+    '201':
+      description: Call was successful, object created.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token_guid:
+                type: string
+                format: uuid
+                description: GUID of the newly-created token. Use this for API calls to
+                  the /pats/{token_guid} endpoint.
+              token_prefix:
+                type: string
+                description: Prefix of the newly-created token.
+              token_value:
+                type: string
+                description: Value of the newly-created token. This will be the
+                  only time the token is available in plaintext, so be sure to
+                  save it somewhere for future use.
+              expires:
+                type: string
+                format: date-time
+                description: Date and time the token expires, in
+                  ISO 8601 format as specified by
+                  [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-pats-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+patch:
+  tags:
+    - pats
+  summary: Reserved for internal use, remove from public documentation
+  description: Used by the VideonAuthorizer to determine if a token is valid.
+  operationId: VerifyPersonalAccessToken
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            token_hash:
+              type: string
+              description: Hash of the token to verify
+          required: ["token_hash"]
+  responses:
+    '200':
+      description: Request was successful, object updated.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              user_guid:
+                type: string
+                format: uuid
+                description: GUID of the user account associated with the token.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      description: Client is not properly authenticated.  Make sure the HTTP
+        Authorization header was included in the request, and the token has not
+        expired.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error_code:
+                type: string
+                description: Error message (informational only).
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      description: Could not find token/token does not exist.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error_code:
+                type: string
+                description: Error message (informational only).
+    '409':
+      description: The request could not be completed due to a conflict with the
+        current state of the target resource.  Check the response body for a message and/or code.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error_code:
+                type: string
+                description: Error message (informational only).
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-pats-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - pats
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: PersonalAccessTokensPreflight
+  responses:
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-pats-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything

@@ -1,0 +1,157 @@
+# OpenAPI spec for the /devices/{device_guid} path
+# Corresponds to the api_devices CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+get:
+  tags:
+    - devices
+  summary: Find Device
+  description: Get the details for a specific device.
+  operationId: FindDevice
+  parameters:
+    - name: device_guid
+      in: path
+      description: GUID of the device.
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Request was successful.  Results will be in the response body.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              device:
+                type: object
+                properties:
+                  device_guid:
+                    type: string
+                    description: GUID of the device.
+                  serial_number:
+                    type: string
+                    description: Serial number of the device.
+                  mac_address:
+                    type: string
+                    description: Mac address of the device.
+                  partner_id:
+                    type: string
+                    description: Partner ID of the device.
+                  model:
+                    type: string
+                    description: Model of the device.
+                  manufacture_date:
+                    type: string
+                    format: date
+                    description: Date the device was manufactured in
+                      ISO 8601 format as specified by
+                      [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      description: Could not find device / device does not exist.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Details a brief message stating the error.
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-devices-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+patch:
+  tags:
+    - devices
+  summary: Update Device
+  description: Update the properties of a device.
+  operationId: UpdateDevice
+  parameters:
+    - name: device_guid
+      in: path
+      description: GUID of the device.
+      required: true
+      schema:
+        type: string
+  responses:
+    $ref: "../responses.yml"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-devices-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+delete:
+  tags:
+    - devices
+  summary: Delete Device
+  description: Delete a specific device.
+  operationId: DeleteDevice
+  parameters:
+    - name: device_guid
+      in: path
+      description: GUID of the device.
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            reason:
+              type: string
+              maxLength: 2048
+              description: Reason for deletion of device.
+          required: ["reason"]
+  responses:
+    $ref: "../responses.yml"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-devices-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - devices
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: DevicePreflight
+  parameters:
+    - name: device_guid
+      in: path
+      description: GUID of the device.
+      required: true
+      schema:
+        type: string
+  responses: 
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-devices-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+

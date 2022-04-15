@@ -1,0 +1,173 @@
+# OpenAPI spec for the /invites path
+# Corresponds to the api_invites CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+get:
+  tags:
+    - invites
+  summary: Find Invites
+  description: Search for invites based on the specified search parameters.
+  operationId: FindInvites
+  parameters:
+    - name: org_guid
+      in: query
+      description: GUID of the organization to filter invites by. If org_guid
+                   parameter is omitted, the results will return all invites
+                   associated with your user email.
+      schema:
+        type: string
+    - $ref: "../common.yml#/components/parameters/paginationSizeParam"
+    - $ref: "../common.yml#/components/parameters/paginationTokenParam"
+  responses:
+    '200':
+      description: Call was successful.  Search results will be in the
+        response body, along with an optional pagination token if there are
+        more results waiting.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              invites:
+                type: array
+                description: Array of found invites.  Will be empty if no
+                  matches are found.  Results are paginated, use pagination_token
+                  to see if additional pages of results are available.
+                items:
+                  type: object
+                  properties:
+                    invite_guid:
+                      type: string
+                      description: GUID of the invite request.
+                    target_email:
+                      type: string
+                      format: email
+                      description: Email the invite was sent to.
+                    org_name:
+                      type: string
+                      description: Name of the organization the invite is for.
+                    org_guid:
+                      type: string
+                      format: uuid
+                      description: GUID of the organization the invite is for.
+                    access:
+                      type: integer
+                      description: Access level to give the user.
+                      example: 100
+              pagination_token:
+                type: string
+                nullable: true
+                description: Pagination token.  If additional search results
+                  are available, this property will contain a token to
+                  retrieve the next page.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      $ref: "../responses.yml#/404"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-invites-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+post:
+  tags:
+    - invites
+  summary: Send Invite
+  description: Send an invite with the attributes specified.
+  operationId: CreateInvite
+  parameters:
+    - name: Org-Guid
+      in: header
+      description: GUID of the organization to invite the user to.
+                   Either Org-Guid or org_guid must be present.
+                   If both are present, org_guid is used.
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            org_guid:
+              type: string
+              description: GUID of the organization to invite the user to.
+                           Either Org-Guid or org_guid must be present.
+                           If both are present, org_guid is used.
+            target_email:
+              type: string
+              format: email
+              description: Email of the user to invite.
+            access:
+              type: integer
+              description: Access level to give the user upon joining the organization.
+              example: 100
+          required: ["target_email", "access"]
+  responses:
+    '201':
+      description: Call was successful, invite created.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Informational message.
+              invite_guid:
+                type: string
+                description: GUID of the invite request.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      $ref: "../responses.yml#/404"
+    '409':
+      description: The request could not be completed due to a conflict with the
+        current state of the target resource.  Check the response body for a message and/or code.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Error message (informational only).
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-invites-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - invites
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe 
+    to send.
+  operationId: InvitesPreflight
+  responses:
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-invites-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+

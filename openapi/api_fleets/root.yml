@@ -1,0 +1,177 @@
+# OpenAPI spec for the /fleets path.
+# Corresponds to the api_fleets CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+get:
+  tags:
+    - fleets
+  summary: Find Fleets
+  description: Search for fleets based on the specified attributes.
+    Note that search results will exclude fleets that you do not
+    have access to.
+  operationId: FindFleets
+  parameters:
+    - name: Org-Guid
+      in: header
+      description: GUID of an organization to filter fleet results by.
+        If both Org-Guid and org_guid are present, org_guid is used.
+      schema:
+        type: string
+    - name: org_guid
+      in: query
+      description: GUID of an organization to filter fleet results by.
+       If both Org-Guid and org_guid are present, org_guid is used.
+      schema:
+        type: string
+    - name: fleet_name
+      in: query
+      description: Fleet name to search for, can be a full or partial
+        name.  Searches are case-insensitive, and substrings will match.
+        For example, a search for "labs" will match "Videon Labs, Inc.".
+      schema:
+        type: string
+    - name: user_guid
+      in: query
+      description: GUID of a user to filter fleet results by. If present,
+        org_guid is ignored. If org_guid and user_guid are not present,
+        defaults to your user GUID.
+      schema:
+        type: string
+    - $ref: "../common.yml#/components/parameters/paginationSizeParam"
+    - $ref: "../common.yml#/components/parameters/paginationTokenParam"
+  responses:
+    '200':
+      description: Call was successful.  Search results will be in the
+        response body, along with an optional pagination token if there are
+        more results waiting.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              fleets:
+                type: array
+                description: Array of found fleets.  Will be empty if no
+                  matches are found.  Results are paginated, use
+                  pagination_token to see if additional pages of results are
+                  available.
+                items:
+                  type: object
+                  properties:
+                    fleet_name:
+                      type: string
+                      description: Name of the fleet
+                    fleet_guid:
+                      type: string
+                      format: uuid
+                      description: GUID of the fleet
+                    org_guid:
+                      type: string
+                      format: uuid
+                      description: GUID of the organization the fleet belongs to.
+                    access:
+                      type: integer
+                      description: User's access level within the fleet.
+                                   Only present if user_guid was specified.
+                      example: 100
+              pagination_token:
+                type: string
+                nullable: true
+                description: Pagination token.  If additional search results
+                  are available, this property will contain a token to
+                  retrieve the next page.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+post:
+  tags:
+    - fleets
+  summary: Create Fleet
+  description: Create a fleet with the attributes specified.
+  operationId: CreateFleet
+  parameters:
+    - name: Org-Guid
+      in: header
+      description: GUID of the organization creating the fleet.
+                   Either Org-Guid or org_guid must be present.
+                   If both are present, org_guid is used.
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            fleet_name:
+              type: string
+              description: Fleet name
+              pattern: '^\S[^\n\r\t\v\f]*\S$'
+              minLength: 2
+              maxLength: 256
+            org_guid:
+              type: string
+              description: GUID of the organization creating the fleet.
+                           Either Org-Guid or org_guid must be present.
+                           If both are present, org_guid is used.
+          required: ["fleet_name"]
+  responses:
+    '201':
+      description: Call was successful, object created.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Status message (informational only)
+              fleet_guid:
+                type: string
+                format: uuid
+                description: GUID of the newly-created fleet, use this
+                  for subsequent API calls.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - fleets
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: FleetsPreflight
+  responses:
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything

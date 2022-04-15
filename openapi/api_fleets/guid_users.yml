@@ -1,0 +1,316 @@
+# OpenAPI spec for the /fleets/{fleet_guid}/users path
+# Corresponds to the api_fleets CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+get:
+  tags:
+    - fleets
+  summary: Get Fleet Membership Details
+  description: Get the users for a specific fleet.
+    Note that you will be unable to access fleets that
+    you are not a member of.
+  operationId: GetFleetMembership
+  parameters:
+    - name: fleet_guid
+      in: path
+      description: GUID of the fleet.
+      required: true
+      schema:
+        type: string
+    - name: user_guid
+      in: query
+      description: GUID of a user to filter fleets results by.
+      schema:
+        type: string
+    - $ref: "../common.yml#/components/parameters/paginationSizeParam"
+    - $ref: "../common.yml#/components/parameters/paginationTokenParam"
+  responses:
+    '200':
+      description: Request was successful.  Results will be in the response body.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              users:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    user_guid:
+                      type: string
+                      description: GUID of a user that is a member of the fleet
+                    access:
+                      type: integer
+                      description: Access level of user
+                      example: 100
+                    org_guid:
+                      type: string
+                      description: GUID of the organization that owns the fleet.
+                        Present if the user is in the fleet via their membership
+                        of the organization.
+              pagination_token:
+                type: string
+                nullable: true
+                description: Pagination token.  If additional search results
+                    are available, this property will contain a token to
+                    retrieve the next page.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      $ref: "../responses.yml#/404"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-UserHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+post:
+  tags:
+    - fleets
+  summary: Create or Add User to Fleet
+  description: Add a user to a fleet, or if the user
+    doesn't exist, create and add the user.
+  operationId: CreateFleetUser
+  parameters:
+    - name: fleet_guid
+      in: path
+      description: GUID of the fleet.
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            user_guid:
+              type: string
+              description: User GUID (if adding existing user)
+            name:
+              type: string
+              description: Name of the user (if creating user)
+            email:
+              type: string
+              format: email
+              description: Email of the user (if creating user)
+            phone_number:
+              type: string
+              description: Phone Number of the user (if creating user)
+            locale:
+              type: string
+              description: Locale of the user (if creating user)
+            zoneinfo:
+              type: string
+              description: Timezone of the user (if creating user)
+            access:
+              type: integer
+              example: 100
+              description: If user_guid was provided, the access level of the
+                  requested user. Otherwise, the access level of the current user.
+                  (100 = reader, 200 = user, 300 = admin)
+          required: ["access"]
+  responses:
+    '201':
+      description: Call was successful, object created. If the API
+         returns data, it will be present in the response body in JSON format.
+    '200':
+      $ref: "../responses.yml#/200"
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      $ref: "../responses.yml#/404"
+    '409':
+      description: The request could not be completed due to a conflict with the
+        current state of the target resource.  Check the response body for a message and/or code.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Error message (informational only).
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-UserHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+put:
+  tags:
+    - fleets
+  summary: Update Fleet Users
+  description: Update user permissions within a fleet.
+  operationId: UpdateFleetUser
+  parameters:
+    - name: fleet_guid
+      in: path
+      description: GUID of the fleet.
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            users:
+              type: array
+              items:
+                type: object
+                properties:
+                  user_guid:
+                    type: string
+                    description: GUID of the user.
+                  access:
+                    type: integer
+                    description: Access level to give to the user.
+                    example: 100
+  responses:
+    '200':
+      description: Request was successful.  Results will be in the response body.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Status message (information only).
+              failed_users:
+                type: array
+                nullable: true
+                description: Users that could not be updated and why.
+                items:
+                  type: object
+                  properties:
+                    user_guid:
+                      type: string
+                      description: GUID of the user.
+                    reason:
+                      type: string
+                      description: Reason the user could not be updated.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      $ref: "../responses.yml#/404"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-UserHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+delete:
+  tags:
+    - fleets
+  summary: Delete Fleet Users
+  description: Remove users from a fleet.
+  operationId: DeleteFleetUser
+  parameters:
+    - name: fleet_guid
+      in: path
+      description: GUID of the fleet.
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            users:
+              type: array
+              description: List of user GUIDs to remove from the fleet.
+              items:
+                type: string
+  responses:
+    '200':
+      description: Request was successful.  Results will be in the response body.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Status message (information only).
+              failed_users:
+                type: array
+                nullable: true
+                description: Users that could not be deleted and why.
+                items:
+                  type: object
+                  properties:
+                    user_guid:
+                      type: string
+                      description: GUID of the user.
+                    reason:
+                      type: string
+                      description: Reason the user could not be deleted.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      $ref: "../responses.yml#/404"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-UserHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - fleets
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: FleetMembershipPreflight
+  parameters:
+   - name: fleet_guid
+     in: path
+     description: GUID of the fleet.
+     required: true
+     schema:
+       type: string
+  responses:
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-UserHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+

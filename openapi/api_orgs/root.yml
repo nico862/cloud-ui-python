@@ -1,0 +1,149 @@
+# OpenAPI spec for the /orgs path.
+# Corresponds to the api_orgs CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+get:
+  tags:
+    - organizations
+  summary: Find organizations
+  description: Search for organizations based on the specified attribute.
+    Note that search results will exclude organizations that you do not
+    have access to.
+  operationId: FindOrganizations
+  parameters:
+    - name: org_name
+      in: query
+      description: Organization name to search for, can be a full or partial
+        name.  Searches are case-insensitive, and substrings will match.
+        For example, a search for "labs" will match "Videon Labs, Inc.".
+      schema:
+        type: string
+    - name: user_guid
+      in: query
+      description: GUID of a user to filter organization results by.
+      schema:
+        type: string
+    - $ref: "../common.yml#/components/parameters/paginationSizeParam"
+    - $ref: "../common.yml#/components/parameters/paginationTokenParam"
+  responses:
+    '200':
+      description: Call was successful.  Search results will be in the
+        response body, along with an optional pagination token if there are
+        more results waiting.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              orgs:
+                type: array
+                description: Array of found organizations.  Will be empty if no
+                  matches are found.  Results are paginated, use
+                  pagination_token to see if additional pages of results are
+                  available.
+                items:
+                  type: object
+                  properties:
+                    org_name:
+                      type: string
+                      description: Name of the organization
+                    org_guid:
+                      type: string
+                      format: uuid
+                      description: GUID of the organization
+                    access:
+                      type: integer
+                      description: Access level within the organization.
+                                   If user_guid was specified, the access
+                                   level for that user. Otherwise, the
+                                   access level for the user that made the
+                                   request.
+                      example: 100
+              pagination_token:
+                type: string
+                nullable: true
+                description: Pagination token.  If additional search results
+                  are available, this property will contain a token to
+                  retrieve the next page.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-orgs-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+post:
+  tags:
+    - organizations
+  summary: Create an Organization
+  description: Create an organization with the attributes specified.
+  operationId: CreateOrganization
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            org_name:
+              type: string
+              description: Organization name
+              pattern: '^\S[^\n\r\t\v\f]*\S$'
+              minLength: 2
+              maxLength: 256
+          required: ["org_name"]
+  responses:
+    '201':
+      description: Call was successful, object created.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Status message (informational only)
+              org_guid:
+                type: string
+                format: uuid
+                description: GUID of the newly-created organization, use this
+                  for subsequent API calls.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-orgs-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - organizations
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: OrganizationsPreflight
+  responses:
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-orgs-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything

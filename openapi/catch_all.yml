@@ -1,0 +1,21 @@
+# OpenAPI Documentation for our "catch-all" API route
+# We have to assign the catch-all in multiple places,
+# So define it once in this file so it can be included
+# multiple times, e.g. $ref: "./catch_all.yml"
+
+x-amazon-apigateway-any-method:
+  summary: Reserved for internal use, remove from public documentation
+  description: Catch-all API route to cover any paths/methods that are not
+    supported, and return a "nice" error message (e.g. 404).  We COULD 
+    achieve something similar by customizing the Gateway Responses, but 
+    the response for unsupported API method or resource is the same as 
+    Missing Authentication Token, which is unhelpful.
+  responses:
+    '404':
+      $ref: "./responses.yml#/404"
+  # No security on this route, 404s are public.
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-CatchAllHandler-v1/invocations
+    httpMethod: POST

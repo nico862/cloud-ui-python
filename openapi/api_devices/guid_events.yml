@@ -1,0 +1,99 @@
+# OpenAPI spec for the /devices/{device_guid}/events path
+# Corresponds to the api_devices CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+get:
+  tags:
+    - devices
+  summary: Get Device Events
+  description: Get devices events based on the provided attributes.
+    Events are deleted 30 days after they occur.
+  operationId: GetDeviceEvents
+  parameters:
+    - name: device_guid
+      in: path
+      description: GUID of the device.
+      required: true
+      schema:
+        type: string
+    - $ref: "../common.yml#/components/parameters/eventTypesParam"
+    - $ref: "../common.yml#/components/parameters/startTimeParam"
+    - $ref: "../common.yml#/components/parameters/endTimeParam"
+    - $ref: "../common.yml#/components/parameters/paginationSizeParam"
+    - $ref: "../common.yml#/components/parameters/paginationTokenParam"
+  responses:
+    '200':
+      description: Call was successful, results will be in the response body.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              events:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    event_guid:
+                      type: string
+                      description: GUID of the event.
+                    device_guid:
+                      type: string
+                      description: GUID of the device corresponding to this event.
+                    timestamp:
+                      type: string
+                      format: date-time
+                      description: The date and time the event occurred,
+                        in ISO 8601 format as specified by
+                        [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+                    event_type:
+                      type: string
+                      description: Type of event that occurred
+                    event_data:
+                      type: object
+                      description: The data from the event. Varies based on event_type.
+              pagination_token:
+                type: string
+                nullable: true
+                description: Pagination token.  If additional search results
+                  are available, this property will contain a token to
+                  retrieve the next page.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-devices-EventsHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - devices
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: DeviceEventsPreflight
+  parameters:
+    - name: device_guid
+      in: path
+      description: GUID of the device.
+      required: true
+      schema:
+        type: string
+  responses: 
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-devices-EventsHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+

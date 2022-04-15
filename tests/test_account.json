@@ -1,0 +1,10 @@
+{
+    "name": "Integration Test User",
+    "email": "integration.test.user@simulator.amazonses.com",
+    "user_guid": "56cddd24-5194-4be2-8ac1-a2bbe62c0e86",
+    "authorization": {
+        "type": "PAT",
+        "token": "26XkZDJTZXR3b_ZuM-SSSOXe0c09EC0jz6BR3ri_r8g",
+        "expires": "2023-01-31T13:06:53Z"
+    }
+}

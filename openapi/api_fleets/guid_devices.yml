@@ -1,0 +1,213 @@
+# OpenAPI spec for the /fleets/{fleet_guid}/devices path
+# Corresponds to the api_fleets CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+get:
+  tags:
+    - fleets
+  summary: Get Fleet Devices Details
+  description: Get the devices for a specific fleet.
+  operationId: GetFleetDevices
+  parameters:
+    - name: fleet_guid
+      in: path
+      description: GUID of the fleet.
+      required: true
+      schema:
+        type: string
+    - $ref: "../common.yml#/components/parameters/paginationSizeParam"
+    - $ref: "../common.yml#/components/parameters/paginationTokenParam"
+  responses:
+    '200':
+      description: Request was successful.  Results will be in the response body.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              devices:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    device_guid:
+                      type: string
+                      description: GUID of a device that belongs to the fleet
+              pagination_token:
+                type: string
+                nullable: true
+                description: Pagination token.  If additional search results
+                    are available, this property will contain a token to
+                    retrieve the next page.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      $ref: "../responses.yml#/404"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-DeviceHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+post:
+  tags:
+    - fleets
+  summary: Add Fleet Devices
+  description: Add devices to a fleet.
+  operationId: AddFleetDevice
+  parameters:
+    - name: fleet_guid
+      in: path
+      description: GUID of the fleet.
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            devices:
+              type: array
+              description: List of device GUIDs to add to the fleet.
+              items:
+                type: string
+  responses:
+    '200':
+      description: Request was successful.  Results will be in the response body.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Status message (information only).
+              failed_devices:
+                type: array
+                nullable: true
+                description: Devices that could not be added and why.
+                items:
+                  type: object
+                  properties:
+                    device_guid:
+                      type: string
+                      description: GUID of the device.
+                    reason:
+                      type: string
+                      description: Reason the device could not be added.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      $ref: "../responses.yml#/404"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-DeviceHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+delete:
+  tags:
+    - fleets
+  summary: Delete Fleet Devices
+  description: Remove devices from a fleet.
+  operationId: DeleteFleetDevice
+  parameters:
+    - name: fleet_guid
+      in: path
+      description: GUID of the fleet.
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            devices:
+              type: array
+              description: List of device GUIDs to remove from the fleet.
+              items:
+                type: string
+  responses:
+    '200':
+      description: Request was successful.  Results will be in the response body.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Status message (information only).
+              failed_devices:
+                type: array
+                nullable: true
+                description: Devices that could not be deleted and why.
+                items:
+                  type: object
+                  properties:
+                    device_guid:
+                      type: string
+                      description: GUID of the device.
+                    reason:
+                      type: string
+                      description: Reason the device could not be deleted.
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      $ref: "../responses.yml#/404"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-DeviceHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - fleets
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: FleetDevicePreflight
+  parameters:
+   - name: fleet_guid
+     in: path
+     description: GUID of the fleet.
+     required: true
+     schema:
+       type: string
+  responses:
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-DeviceHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+

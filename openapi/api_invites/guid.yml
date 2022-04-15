@@ -1,0 +1,117 @@
+# OpenAPI spec for the /invites/{invite_guid} path.
+# Corresponds to the api_invites CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+get:
+  tags:
+    - invites
+  summary: Get Invite Details
+  description: Get the details for a specific invite.
+  operationId: GetInvite
+  parameters:
+    - name: invite_guid
+      in: path
+      description: GUID of the invite. If you create a new invite, the GUID is
+        returned in the response body.  Otherwise, you can look up the GUID
+        with GetInvites. The GUID should be url-encoded to ensure the path is
+        valid.
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Call was successful.  Search results will be in the
+        response body, along with an optional pagination token if there are
+        more results waiting.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              invite:
+                type: object
+                properties:
+                  invite_guid:
+                    type: string
+                    description: GUID of the invite request.
+                  target_email:
+                    type: string
+                    format: email
+                    description: Email the invite was sent to.
+                  org_name:
+                    type: string
+                    description: Name of the organization the invite is for.
+                  org_guid:
+                    type: string
+                    format: uuid
+                    description: GUID of the organization the invite is for.
+                  access:
+                    type: integer
+                    description: Access level to give the user.
+                    example: 100
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-invites-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+delete:
+  tags:
+    - invites
+  summary: Delete Pending Invite
+  description: Delete a pending invite with the attributes specified.
+  operationId: DeleteInvite
+  parameters:
+    - name: invite_guid
+      in: path
+      description: GUID of the invite. If you create a new invite, the GUID is
+        returned in the response body.  Otherwise, you can look up the GUID
+        with GetInvites.
+      required: true
+      schema:
+        type: string
+  responses:
+    $ref: "../responses.yml"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-invites-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - invites
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: InvitePreflight
+  parameters:
+    - name: invite_guid
+      in: path
+      description: GUID of the invite object.  If you create a new invite,
+        the GUID is returned in the response body.  Otherwise, you can
+        look up the GUID with GetInvites.
+      required: true
+      schema:
+        type: string
+  responses:
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-invites-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything

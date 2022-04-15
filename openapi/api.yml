@@ -1,0 +1,387 @@
+# OpenAPI Definition file for the API Gateway
+#
+# We define our API using the OpenAPI specification.
+# The CDK api stack imports this file (and the referenced files) to generate
+# the API Gateway and all paths/methods.
+#
+# These files also serve as the basis for our public-facing documentation.
+# Published documentation should have the internal stuff stripped out.
+#
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+#
+# AWS has a number of limitations and restrictions on their OpenAPI import.
+# Make sure any code you write below is compatible for import!
+# https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-known-issues.html
+
+openapi: 3.0.3
+info:
+  title: Videon Cloud Platform REST API
+  description: Videon's Cloud Platform provides a simple and intuitive way for
+    organizations to manage fleets of appliances using an intuitive website,
+    or an extensive API set.
+  # Version string will be substituted during CDK deploy.
+  version: $VERSION
+  contact:
+    email: info@videonlabs.com
+servers:
+  # URL string will be substituted after deployment once API Gateway is known.
+  - url: $URL
+paths:
+  /:
+    $ref: "./catch_all.yml"
+  /{proxy+}:
+    $ref: "./catch_all.yml"
+  /auth-info:
+    get:
+      tags:
+        - auth-info
+      summary: Get Authentication Details
+      description: Used by the front end UI to provide information for a smooth
+        authentication flow.  Returns info about which SSO identity provider the
+        user is registered with, URL to the OAuth provider, etc.  The expectation
+        is that the login screen will prompt the user for their email, call this
+        API, and then use the response to determine the next step (prompt for
+        password, redirect to SSO Identity Provider, etc.).
+      parameters:
+        - name: email
+          in: query
+          description: Email address of the user attempting to sign in.
+            The user does not need to actually be registered (the API will not
+            disclose whether or not a user actually exists).
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          $ref: "./responses.yml#/200"
+        '400':
+          $ref: "./responses.yml#/400"
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+        uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-AuthInfoHandler-v1/invocations
+        httpMethod: POST
+      x-amazon-apigateway-request-validator: validate-everything
+    options:
+      tags:
+        - auth-info
+      summary: CORS preflight
+      description: Used by browsers to determine whether the request is safe
+        to send.
+      responses:
+        '204':
+          description: CORS supported
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+        uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-AuthInfoHandler-v1/invocations
+        httpMethod: POST
+      x-amazon-apigateway-request-validator: validate-everything
+  /devices:
+    $ref: "./api_devices/root.yml"
+  /devices/adopt:
+    $ref: "./api_devices/adopt.yml"
+  /devices/events:
+    $ref: "./api_devices/events.yml"
+  /devices/metrics:
+    $ref: "./api_devices/metrics.yml"
+  /devices/{device_guid}:
+    $ref: "./api_devices/guid.yml"
+  /devices/{device_guid}/events:
+    $ref: "./api_devices/guid_events.yml"
+  /devices/{device_guid}/state:
+    $ref: "./api_devices/guid_state.yml"
+  /devices/{device_guid}/metrics:
+    $ref: "./api_devices/guid_metrics.yml"
+  /fleets:
+    $ref: "./api_fleets/root.yml"
+  /fleets/{fleet_guid}:
+    $ref: "./api_fleets/guid.yml"
+  /fleets/{fleet_guid}/devices:
+    $ref: "./api_fleets/guid_devices.yml"
+  /fleets/{fleet_guid}/events:
+    $ref: "./api_fleets/guid_events.yml"
+  /fleets/{fleet_guid}/users:
+    $ref: "./api_fleets/guid_users.yml"
+  /invites:
+    $ref: "./api_invites/root.yml"
+  /invites/{invite_guid}:
+    $ref: "./api_invites/guid.yml"
+  /invites/accept:
+    $ref: "./api_invites/accept.yml"
+  /invites/decline:
+    $ref: "./api_invites/decline.yml"
+  /openapi:
+    $ref: "./api_openapi/root.yml"
+  /openapi/html:
+    $ref: "./api_openapi/html.yml"
+  /openapi/json:
+    $ref: "./api_openapi/json.yml"
+  /openapi/yaml:
+    $ref: "./api_openapi/yaml.yml"
+  /orgs:
+    $ref: "./api_orgs/root.yml"
+  /orgs/{org_guid}:
+    $ref: "./api_orgs/guid.yml"
+  /orgs/{org_guid}/events:
+    $ref: "./api_orgs/guid_events.yml"
+  /orgs/{org_guid}/users:
+    $ref: "./api_orgs/guid_users.yml"
+  /pats:
+    $ref: "./api_pats/root.yml"
+  /pats/{token_guid}:
+    $ref: "./api_pats/guid.yml"
+  /provisioning/authorize:
+    $ref: "./api_provisioning/authorize.yml"
+  /provisioning/request:
+    $ref: "./api_provisioning/request.yml"
+  /users:
+    $ref: "./api_users/root.yml"
+  /users/{user_guid}:
+    $ref: "./api_users/guid.yml"
+  /test-auth:
+    get:
+      summary: Reserved for internal use, remove from public documentation
+      description: Used by the VideonInternalAuthRotator Lambda function.  The
+        automatic secret rotation includes a "test secret" step, where it will
+        connect with the new secret to verify the rotation was successful.
+        Rather than rely on one of our public API routes, which could change
+        out from under us, we will provide an internal API route we can query
+        to see if the rotation works.  The route could also be used by
+        integration tests.  If you get a 200, the authentication worked.
+      responses:
+        '200':
+          $ref: "./responses.yml#/200"
+        '401':
+          $ref: "./responses.yml#/401"
+        '403':
+          $ref: "./responses.yml#/403"
+      security:
+        - VideonAuthorizer: []
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+        uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-TestAuthHandler-v1/invocations
+        httpMethod: POST
+    options:
+      summary: CORS preflight
+      description: Used by browsers to determine whether the request is safe
+        to send.
+      responses:
+        '204':
+          description: CORS supported
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+        uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-TestAuthHandler-v1/invocations
+        httpMethod: POST
+      x-amazon-apigateway-request-validator: validate-everything
+components:
+  securitySchemes:
+    # We actually allow multiple authentication schemes (JWT, PAT, and
+    # VIDEON_INTERNAL_AUTH), but since all of our authentication methods
+    # funnel through a single Lambda function, we have to document it as
+    # a single security scheme for the AWS OpenAPI import to work properly.
+    #
+    # Note that since this documentation is public-facing, we DO NOT
+    # describe our internal-use-only scheme (VIDEON_INTERNAL_AUTH).  If you
+    # want to know more about that, study the source code for the Authorizer
+    # Lambda.
+    VideonAuthorizer:
+      type: apiKey # AWS requires this to be set to apiKey.
+      description: |
+        Currently the Videon Cloud Platform API supports two
+        different authentication schemes.
+
+        ### 1. JSON Web Token (JWT) ###
+
+        JWT access token access token issued by the Videon Cloud Platform
+        auth provider.  Typically used by interactive web applications.
+        Such tokens are short-lived and must be refreshed frequently.  The
+        provided token must not be expired, and must be an access token
+        (not an identity or refresh token).
+
+        For JWT authentication, the HTTP Authorization header should be
+        prefixed with \"Bearer\", followed by a space, followed by the access
+        token value.
+
+        Example: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp...`
+
+        ### 2. Personal Access Token (PAT) ###
+
+        Use a Personal Access Token issued by the Videon Cloud
+        Platform.  Users have the ability to issue long-lived PAT tokens
+        that are easier to use in non-interactive applications.
+        Authenticating with a PAT token will yield the same permissions as the
+        user that issued it.
+
+        Since PAT tokens are long-lived, it is important for the client to
+        securely store the token and protect it from unauthorized access.
+        Avoid storing the token in unencrypted plain text and do not hard code
+        it into your application source code.
+
+        Despite being long-lived, PAT tokens do have an expiration date.
+        Clients are responsible tracking PAT expiration and issuing new tokens
+        as needed (this can be done via the API).
+
+        If a PAT token is no longer needed or has been exposed to an
+        unauthorized party, it may be revoked immediately.
+
+        For PAT authentication, the HTTP Authorization header should be
+        prefixed with \"PAT\", followed by a space, followed by the access
+        token value.
+
+        Example: `PAT J1eee35QGmzwgqaaovJ8cbnS9wBPGwHI`
+      name: Authorization
+      in: header
+      x-amazon-apigateway-authtype: custom
+      x-amazon-apigateway-authorizer:
+        type: request
+        # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+        authorizerUri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-Authorizer-v1/invocations
+        identitySource: method.request.header.Authorization
+        # Temporary disable caching for now to facilitate debugging during initial development.
+        # Set to 5m later.
+        authorizerResultTtlInSeconds: 0
+tags:
+  - name: auth-info
+    description: Retrieve authentication information
+  - name: devices
+    description: View and Manage Videon Devices
+  - name: fleets
+    description: View and Manage Fleets
+  - name: invites
+    description: View and Manage Invitations
+  - name: openapi
+    description: Retrieve the OpenAPI specification for this API
+  - name: organizations
+    description: View and Manage Organizaations
+  - name: pats
+    description: View and Manage Personal Access Tokens
+  - name: users
+    description: View and Manage Users
+x-tagGroups:
+  - name: Documentation
+    tags:
+      - openapi
+  - name: General
+    tags:
+      - auth-info
+      - devices
+      - fleets
+      - invites
+      - organizations
+      - pats
+      - users
+x-amazon-apigateway-request-validators:
+  # Define a basic scheme for validating API inputs (validate everything)
+  # APIs that accept input should reference this validator with
+  # x-amazon-apigateway-request-validator: validate-everything
+  validate-everything:
+    validateRequestBody: true
+    validateRequestParameters: true
+x-amazon-apigateway-endpoint-configuration:
+  # Disable the default https://xxxxx.execute-api.xxxxx.amazonaws.com URL
+  # for the API gateway because we use a custom domain name, defined in the
+  # CDK stack.
+  disableExecuteApiEndpoint: true
+# Define the types of binary media types allowed
+x-amazon-apigateway-binary-media-types:
+  - "application/x-tar"
+x-amazon-apigateway-gateway-responses:
+  # All gateway responses must have their CORS header set otherwise,
+  # browsers will block the response.
+  #
+  # Customize the response messages generated by the API Gateway to be helpful.
+  # As a general rule, include the following:
+  # message: Free-form text of what went wrong and how to fix it.  MAKE SURE
+  #          THIS DOES NOT LEAK ANY SENSITIVE DATA OR IMPLEMENTATION DETAILS.
+  # api_request_id: Customers can provide this to support and we can query the
+  #                 logs to figure out what happened.
+  # operation_name: Provide this so the user can cross-reference the OpenAPI
+  #                 documentation and fix it.
+  ACCESS_DENIED:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  API_CONFIGURATION_ERROR:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  AUTHORIZER_CONFIGURATION_ERROR:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  AUTHORIZER_FAILURE:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  BAD_REQUEST_PARAMETERS:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+    responseTemplates:
+      application/json: >
+        {
+          "message": $context.error.messageString,
+          "operation_name": "RequestChecker",
+          "api_request_id": "$context.requestId"
+        }
+  BAD_REQUEST_BODY:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+    responseTemplates:
+      application/json: >
+        {
+          "message": "$context.error.validationErrorString",
+          "operation_name": "RequestChecker",
+          "api_request_id": "$context.requestId"
+        }
+  DEFAULT_4XX:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  DEFAULT_5XX:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  EXPIRED_TOKEN:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  INTEGRATION_FAILURE:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  INTEGRATION_TIMEOUT:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  INVALID_API_KEY:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  INVALID_SIGNATURE:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  MISSING_AUTHENTICATION_TOKEN:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  QUOTA_EXCEEDED:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  REQUEST_TOO_LARGE:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  RESOURCE_NOT_FOUND:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  THROTTLED:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  UNAUTHORIZED:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  UNSUPPORTED_MEDIA_TYPE:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+  WAF_FILTERED:
+    responseParameters:
+      "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+    responseTemplates:
+      application/json: >
+        {
+          "message": "Request was blocked for security reasons.",
+          "api_request_id": "$context.requestId"
+        }

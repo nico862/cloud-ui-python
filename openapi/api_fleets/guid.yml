@@ -1,0 +1,146 @@
+# OpenAPI spec for the /fleets/{fleet_guid} path.
+# Corresponds to the api_fleets CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+get:
+  tags:
+    - fleets
+  summary: Find Fleet
+  description: Search for a fleet based on the fleet's GUID.
+  operationId: FindFleet
+  parameters:
+    - name: fleet_guid
+      in: path
+      description: GUID of the fleet.
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Call was successful.  Search results will be in the
+        response body.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              fleet:
+                type: object
+                properties:
+                  fleet_name:
+                    type: string
+                    description: Name of the fleet
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+patch:
+  tags:
+    - fleets
+  summary: Update Fleet
+  description: Update a fleet with the attributes specified in the
+    request body.
+  operationId: UpdateFleet
+  parameters:
+    - name: fleet_guid
+      in: path
+      description: GUID of the fleet.
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            fleet_name:
+              type: string
+              description: Fleet name
+              pattern: '^\S[^\n\r\t\v\f]*\S$'
+              minLength: 2
+              maxLength: 256
+          required: ["fleet_name"]
+  responses:
+    $ref: "../responses.yml"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+delete:
+  tags:
+    - fleets
+  summary: Delete Fleet
+  description: Delete a specific fleet.
+    Note that you will be unable to access organizations that you are not
+    a member of.
+  operationId: DeleteFleet
+  parameters:
+    - name: fleet_guid
+      in: path
+      description: GUID of the fleet.
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            reason:
+              type: string
+              maxLength: 2048
+              description: Reason for deletion of fleet
+          required: ["reason"]
+  responses:
+    $ref: "../responses.yml"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - fleets
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: FleetPreflight
+  parameters:
+    - name: fleet_guid
+      in: path
+      description: GUID of the fleet.
+      required: true
+      schema:
+        type: string
+  responses:
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-fleets-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything

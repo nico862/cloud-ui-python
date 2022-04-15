@@ -1,0 +1,39 @@
+# OpenAPI Documentation for standard HTTP responses.
+# Other files can reference these to provide a canned response description.
+# For example:
+#   responses:
+#     $ref: "./responses.yml"
+# You can also reference specific response codes, which allows you to use
+# the canned description for some responses but not others.
+#   responses:
+#     '200':
+#       description: 'My custom description'
+#     '400':
+#       $ref: "./responses.yml#/400"
+#     '401':
+#       $ref: "./responses.yml#/401"
+#     '403':
+#       $ref: "./responses.yml#/403"
+#     '404':
+#       $ref: "./responses.yml#/404"
+
+'200':
+  description: Call was successful.  If the API returns data, it will be 
+    present in the response body in JSON format.
+'400':
+  description: Server could not process the request, usually due to a 
+    missing or incorrectly formatted parameter.  Check the response body for
+    a message and/or error code.
+'401':
+  description: Client is not properly authenticated.  Make sure the HTTP 
+    Authorization header was included in the request, and the token has not 
+    expired.
+'403':
+  description: Client is authenticated, but does not have permission to 
+    perform this operation.  Your access level may be too low (e.g. you need
+    admin), or you may not be a member of the organization/fleet where this 
+    object exists.
+'404':
+  description: The specified API route could not be found.  It may not exist, 
+    or it may refer to an object in an organization/fleet that you are not a 
+    member of, and is therefore "invisible" to you.'

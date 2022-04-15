@@ -1,0 +1,41 @@
+# OpenAPI spec for the /openapi/html path
+# Corresponds to the api_openapi CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching 
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+get:
+  tags:
+    - openapi
+  summary: OpenAPI Spec (HTML)
+  description: Returns the OpenAPI specification document for this API as 
+    user-friendly HTML.  Users may visit this URL with their browser to 
+    learn about the API.  No authentication required.
+  operationId: GetOpenApiHtml
+  responses:
+    '200':
+      description: Call was successful.  The response body contains the 
+        OpenAPI specification document.
+  # No security on this operation, public documentation
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-openapi-ObjectHandler-v1/invocations
+    httpMethod: POST
+options:
+  tags:
+    - openapi
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe 
+    to send.
+  operationId: OpenApiHtmlPreflight
+  responses:
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-openapi-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+

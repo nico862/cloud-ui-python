@@ -1,0 +1,162 @@
+# OpenAPI spec for the /devices/{device_guid}/state path
+# Corresponds to the api_devices CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+get:
+  tags:
+    - devices
+  summary: Get Device State
+  description: Get the state for a specific device.
+  operationId: GetDeviceState
+  parameters:
+    - name: device_guid
+      in: path
+      description: GUID of the device.
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Request was successful.  Results will be in the response body.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              state:
+                type: object
+                properties:
+                  device_name:
+                    type: string
+                    description: Name of the device.
+                  device_guid:
+                    type: string
+                    description: GUID of the device.
+                  device_ip:
+                    type: string
+                    description: IP address of the device.
+                  ip_scheme:
+                    type: string
+                    description: IP scheme of the device.
+                    example: "dhcp"
+                  host_ip:
+                    type: string
+                    description: IP address of the host.
+                  hostname:
+                    type: string
+                    description: Hostname of the device.
+                  mac_address_current:
+                    type: string
+                    description: Current mac address of the device.
+                  mac_address_provisioned:
+                    type: string
+                    description: Mac address of the device when it was provisioned.
+                  serial_number:
+                    type: string
+                    description: Serial number of the device.
+                  daemon_version:
+                    type: string
+                    description: Daemon version of the device.
+                  system_version:
+                    type: string
+                    description: System version of the device.
+                  firmware_version:
+                    type: string
+                    description: Fireware version of the device.
+                  streamin_daemon_enabled:
+                    type: boolean
+                    description: True when the Videon daemon is enabled.
+                  stream_daemon_pid:
+                    type: integer
+                    description: PID of the Videon daemon. -1 when not running.
+                  web_server_enabled:
+                    type: boolean
+                    description: True when the Videon web server is enabled.
+                  web_server_pid:
+                    type: integer
+                    description: PID of the Videon web server. -1 when not running.
+                  ull_server_enabled:
+                    type: boolean
+                    description: True when the Videon ULL server is enabled.
+                  ull_server_pid:
+                    type: integer
+                    description: PID of the Videon ULL server. -1 when not running.
+                  streaming_output_enabled:
+                    type: boolean
+                    description: True when an output is currently enabled.
+                  streaming_output_active:
+                    type: boolean
+                    description: True when an output is currently streaming.
+                  input_video_source:
+                    type: string
+                    description: The type of the video source input.
+                  input_video_format:
+                    type: string
+                    description: The format of the video source input.
+                  input_audio_source:
+                    type: string
+                    description: The type of the audio source input.
+                  input_audio_detected:
+                    type: boolean
+                    description: True when input audio is detected.
+                  last_boot:
+                    type: string
+                    format: date-time
+                    description: Date and time the device was last booted in
+                      ISO 8601 format as specified by
+                      [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+                  last_state_update:
+                    type: string
+                    format: date-time
+                    description: Date and time the device last provided a state update
+                      in ISO 8601 format as specified by
+                      [RFC 3339, Section 5.6](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      description: Could not find device state / device does not exist.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Details a brief message stating the error.
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-devices-StateHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - devices
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: DeviceStatePreflight
+  parameters:
+    - name: device_guid
+      in: path
+      description: GUID of the device.
+      required: true
+      schema:
+        type: string
+  responses: 
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-devices-StateHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+

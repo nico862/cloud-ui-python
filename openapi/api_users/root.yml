@@ -1,0 +1,227 @@
+# OpenAPI spec for the /users path.
+# Corresponds to the api_users CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+get:
+  tags:
+    - users
+  summary: Find Users
+  description: Search for users based on the specified attribute. Note that
+    search results will exclude user accounts for organizations/fleets that
+    you do not have access to.
+  operationId: FindUsers
+  parameters:
+    - name: search_attribute
+      in: query
+      description: User attribute to search by.
+      required: true
+      schema:
+        type: string
+        enum: [user_guid, name, email, phone_number, enabled, status]
+    - name: search_value
+      in: query
+      description: Value to search for in the specified search_attribute,
+        can be an exact or partial match depending on starts_with.  Searches
+        are case-insensitive.
+      required: true
+      schema:
+        type: string
+    - name: starts_with
+      in: query
+      description: Specifies whether the search will only look at the find
+        partial matches based on the beginning of the attribute, or if it must
+        be an exact match.  If not specified, default is false.
+      schema:
+        type: string
+        enum: [true, false]
+    - $ref: "../common.yml#/components/parameters/paginationSizeParam"
+    - $ref: "../common.yml#/components/parameters/paginationTokenParam"
+  responses:
+    '200':
+      description: Call was successful.  Search results will be in the
+        response body, along with an optional pagination token if there are
+        more results waiting.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              users:
+                type: array
+                description: Array of found users.  Will be empty if no
+                  matches are found.  Results are paginated, up to 50 at a
+                  time.  Use pagination_token to see if additional pages of
+                  results are available.
+                items:
+                  type: object
+                  properties:
+                    user_guid:
+                      type: string
+                      description: GUID of the user account
+                    name:
+                      type: string
+                      description: Full name of the user
+                    email:
+                      type: string
+                      format: email
+                      description: Email address of the user
+                    email_verified:
+                      type: boolean
+                      description: Has the email address been verified?
+                    phone_number:
+                      type: string
+                      description: Mobile phone number of the user
+                    locale:
+                      type: string
+                      description: User locale in BCP47 (RFC5646) format
+                    zoneinfo:
+                      type: string
+                      description: User time zone in zoneinfo/tz format
+                    enabled:
+                      type: boolean
+                      description: Is the user account enabled?
+                    status:
+                      type: string
+                      description: User account status
+                    created:
+                      type: string
+                      description: Date/time the user account was created
+                    last_modified:
+                      type: string
+                      description: Date/time the user account was last modified
+              pagination_token:
+                type: string
+                nullable: true
+                description: Pagination token.  If additional search results
+                  are available, this property will contain a token to
+                  retrieve the next page.
+    '400':
+      description: Server could not process the request, due to a
+        missing or incorrectly formatted parameter.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Status message (informational only)
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-users-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+post:
+  tags:
+    - users
+  summary: Create a User
+  description: Create a user account with the attributes specified in the
+    request body.  The user will receive a confirmation email.  Note that a
+    user created directly via this API will not be a member of any organization
+    or fleet.
+  operationId: CreateUser
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Full name of the user
+            email:
+              type: string
+              format: email
+              description: Email address of the user
+            password:
+              type: string
+              format: password
+              description: Password for the user
+            phone_number:
+              type: string
+              nullable: true
+              description: Mobile phone number of the user (optional).
+                Must start with + and country code.  Can only contain plus
+                sign and digits, e.g. +18142351111
+            locale:
+              type: string
+              description: User locale in BCP47 (RFC5646) format,
+                e.g. en-US or fr-CA
+            zoneinfo:
+              type: string
+              description: User time zone in zoneinfo (tz database) format,
+                e.g. Europe/Paris or America/Los_Angeles
+          required: ["name", "email", "password", "locale", "zoneinfo"]
+  responses:
+    '201':
+      description: Call was successful; object created.  The response body
+        will contain information about the object (e.g. GUID) that may be used
+        for subsequent API calls.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Status message (informational only)
+              delivery_method:
+                type: string
+                description: Either EMAIL or SMS (email or text)
+              delivery_destination:
+                type: string
+                description: Destination where login confirmation is sent.
+                  If using email, address is obfuscated (test@videonlabs.com -> t***@v***.com).
+              user_guid:
+                type: string
+                description: GUID of the newly-created user
+    '400':
+      description: The user already exists, checking the "message" attribute in response
+        will ensure that this is the case.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Status message (informational only), should output
+                  "User already exists"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-users-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - users
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: UsersPreflight
+  responses:
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-users-CollectionHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything

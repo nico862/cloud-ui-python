@@ -1,0 +1,164 @@
+# OpenAPI spec for the /orgs/{org_guid} path
+# Corresponds to the api_orgs CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+get:
+  tags:
+    - organizations
+  summary: Get Organization Details
+  description: Get the details for a specific organization.
+    Note that you will be unable to access organizations that
+    you are not a member of.
+  operationId: GetOrganization
+  parameters:
+    - name: org_guid
+      in: path
+      description: GUID of the organization object.  If you create a new
+        organization, the GUID is returned in the response body.  Otherwise,
+        you can look up the GUID with FindOrganizations.
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Request was successful.  Results will be in the response body.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              org:
+                type: object
+                properties:
+                  org_name:
+                    type: string
+                    description: Name of the Organization
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      description: Could not find organization/organization does not exist.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Details a brief message stating the error
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-orgs-ObjectHandler-v1/invocations
+    httpMethod: POST
+patch:
+  tags:
+    - organizations
+  summary: Update Organization Properties
+  description: Update the properties of a organization.
+  operationId: UpdateOrganization
+  parameters:
+    - name: org_guid
+      in: path
+      description: GUID of the organization object.  If you create a new
+        organization, the GUID is returned in the response body.  Otherwise,
+        you can look up the GUID with FindOrganizations.
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            org_name:
+              type: string
+              description: Organization name
+              pattern: '^\S[^\n\r\t\v\f]*\S$'
+              minLength: 2
+              maxLength: 256
+          required: ["org_name"]
+  responses:
+    $ref: "../responses.yml"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-orgs-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+delete:
+  tags:
+    - organizations
+  summary: Delete Organization
+  description: Selete a specific organization.
+    Note that you will be unable to access organizations that you are not
+    a member of.
+  operationId: DeleteOrganization
+  parameters:
+    - name: org_guid
+      in: path
+      description: GUID of the organization object.  If you create a new
+        organization, the GUID is returned in the response body.  Otherwise,
+        you can look up the GUID with FindOrganizations.
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            reason:
+              type: string
+              maxLength: 2048
+              description: Reason for deletion of organization
+          required: ["reason"]
+  responses:
+    $ref: "../responses.yml"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-orgs-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+options:
+  tags:
+    - organizations
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: OrganizationPreflight
+  parameters:
+    - name: org_guid
+      in: path
+      description: GUID of the organization object.  If you create a new
+        organization, the GUID is returned in the response body.  Otherwise,
+        you can look up the GUID with FindOrganizations.
+      required: true
+      schema:
+        type: string
+  responses:
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-orgs-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+

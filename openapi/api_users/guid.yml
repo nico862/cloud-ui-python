@@ -1,0 +1,232 @@
+# OpenAPI spec for the /users/{user_guid} path
+# Corresponds to the api_users CDK stack.
+# Make sure that any Lambda functions referenced in this file have matching
+# names in the CDK code!
+# This file is incorporated by reference into the top-level api.yml.
+
+get:
+  tags:
+    - users
+  summary: Get User Details
+  description: Get the details for a specific user.
+    Note that you will be unable to access users that are not a member of
+    your organization/fleet.
+  operationId: GetUser
+  parameters:
+    - name: user_guid
+      in: path
+      description: GUID of the user object.  If you create a new user, the
+        GUID is returned in the response body.  Otherwise, you can look up
+        the GUID with FindUsers.  If you use "myself" for the user_guid,
+        the api will return the user associated with your JWT token.
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Request was successful.  Results will be in the response body.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              user:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: Full name of the user
+                  email:
+                    type: string
+                    format: email
+                    description: Email address of the user
+                  email_verified:
+                    type: boolean
+                    description: Has the email address been verified?
+                  phone_number:
+                    type: string
+                    description: Mobile phone number of the user
+                  phone_number_verified:
+                    type: boolean
+                    description: Has the mobile phone number been verified?
+                  locale:
+                    type: string
+                    description: User locale in BCP47 (RFC5646) format
+                  zoneinfo:
+                    type: string
+                    description: User time zone in zoneinfo/tz format
+                  enabled:
+                    type: boolean
+                    description: Is the user account enabled?
+                  status:
+                    type: string
+                    description: User account status
+                  created:
+                    type: string
+                    description: Date/time the user account was created
+                  last_modified:
+                    type: string
+                    description: Date/time the user account was last modified
+                  mfa_sms_enabled:
+                    type: boolean
+                    description: Has SMS multi-factor-authentication been enabled?
+                  mfa_totp_enabled:
+                    type: boolean
+                    description: Has one-time password been enabled?
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      description: Could not find user/user does not exist.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Details a brief message stating the error
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-users-ObjectHandler-v1/invocations
+    httpMethod: POST
+patch:
+  tags:
+    - users
+  summary: Update User Properties
+  description: Update the properties of a user.
+    Note that user accounts are largely self-managed, so the primary
+    use-case is to edit your own properties.
+  operationId: UpdateUser
+  parameters:
+    - name: user_guid
+      in: path
+      description: GUID of the user object.  If you create a new user, the
+        GUID is returned in the response body.  Otherwise, you can look up the
+        GUID with FindUsers.
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Full name of the user
+            email:
+              type: string
+              format: email
+              description: Email address of the user
+            phone_number:
+              type: string
+              description: Mobile phone number of the user
+            locale:
+              type: string
+              description: User locale in BCP47 (RFC5646) format
+            zoneinfo:
+              type: string
+              description: User time zone in zoneinfo/tz format
+            enabled:
+              type: boolean
+              description: Is the user account enabled?
+  responses:
+    '200':
+      description: Request was successful.  Results will be in the response body.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Response, may include additional information (ex.
+                  "User was disabled, note it may take some time for user sessions to expire.")
+    '400':
+      $ref: "../responses.yml#/400"
+    '401':
+      $ref: "../responses.yml#/401"
+    '403':
+      $ref: "../responses.yml#/403"
+    '404':
+      description: Could not find user/user does not exist.
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-users-ObjectHandler-v1/invocations
+    httpMethod: POST
+delete:
+  tags:
+    - users
+  summary: Delete User
+  description: The presence of this endpoint allows us to comply with GDPR and similar privacy laws. Use this to handle
+    “right to be forgotten” requests. Note that user accounts are largely self-managed, so the primary
+    use-case is to delete your own account.
+  operationId: DeleteUser
+  parameters:
+    - name: user_guid
+      in: path
+      description: GUID of the user object.  If you create a new user, the
+        GUID is returned in the response body.  Otherwise, you can look up the
+        GUID with FindUsers.
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            reason:
+              type: string
+              maxLength: 2048
+              description: Reason for deletion of user
+          required: ["reason"]
+  responses:
+    $ref: "../responses.yml"
+  security:
+    - VideonAuthorizer: []
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-users-ObjectHandler-v1/invocations
+    httpMethod: POST
+options:
+  tags:
+    - users
+  summary: CORS preflight
+  description: Used by browsers to determine whether the request is safe
+    to send.
+  operationId: UserPreflight
+  parameters:
+   - name: user_guid
+     in: path
+     description: GUID of the user object.  If you create a new user, the
+       GUID is returned in the response body.  Otherwise, you can look up the
+       GUID with FindUsers.
+     required: true
+     schema:
+       type: string
+  responses:
+    '204':
+      description: CORS supported
+  x-amazon-apigateway-integration:
+    type: aws_proxy
+    # Lambda function must exist in CDK code, REGION and ACCOUNT will get populated at deployment.
+    uri: arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/arn:aws:lambda:$REGION:$ACCOUNT:function:api-users-ObjectHandler-v1/invocations
+    httpMethod: POST
+  x-amazon-apigateway-request-validator: validate-everything
+
